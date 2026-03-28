@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Code Agent</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: 0 auto; padding: 20px; }
+        textarea { width: 100%; height: 200px; }
+        select, input, button { margin: 5px; padding: 10px; }
+        #result { background: #f5f5f5; padding: 20px; margin-top: 20px; white-space: pre-wrap; }
+        #download { background: #4CAF50; color: white; }
+    </style>
+</head>
+<body>
+    <h1>Code Agent: Fix & Generate</h1>
+    <form id="codeForm">
+        <label>Code (paste or upload):</label><br>
+        <textarea id="code" placeholder="Paste code here..."></textarea><br>
+        <input type="file" id="fileUpload" accept=".py,.js,.html,.txt"><br>
+        <label>Instruction:</label><br>
+        <input type="text" id="instruction" placeholder="e.g. Fix bugs, add feature" style="width:100%;"><br>
+        <label>LLM:</label>
+        <select id="llm">
+            <option value="gemini">Gemini</option>
+            <option value="ollama">Ollama</option>
+            <option value="openai">OpenAI</option>
+            <option value="claude">Claude</option>
+        </select><br>
+        <button type="submit">Generate/Fix</button>
+    </form>
+    <div id="loading" style="display:none;">Processing...</div>
+    <div id="result"></div>
+    <a id="downloadLink" style="display:none;">Download Fixed Code</a>
+
+    <script>
+        document.getElementById('codeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const code = document.getElementById('code').value;
+            const file = document.getElementById('fileUpload').files[0];
+            const instruction = document.getElementById('instruction').value;
+            const llm = document.getElementById('llm').value;
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const download = document.getElementById('downloadLink');
+
+            loading.style.display = 'block';
+            result.innerHTML = '';
+
+            const formData = new FormData();
+            if (file) formData.append('file', file);
+            else formData.append('code', code);
+            formData.append('instruction', instruction);
+            formData.append('llm', llm);
+
+            try {
+                const res = await fetch('/chat', { method: 'POST', body: formData });
+                const data = await res.json();
+                result.innerHTML = `<strong>Response:</strong> ${data.response}<br><strong>Fixed Code:</strong><br><pre>${data.fixed_code}</pre>`;
+                if (data.write_status) result.innerHTML += `<p>${data.write_status}</p>`;
+                if (data.fixed_code) {
+                    const blob = new Blob([data.fixed_code], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    download.href = url;
+                    download.download = 'fixed_code.py';
+                    download.style.display = 'inline-block';
+                    download.textContent = 'Download fixed_code.py';
+                }
+            } catch (err) {
+                result.innerHTML = `Error: ${err}`;
+            }
+            loading.style.display = 'none';
+        });
+    </script>
+</body>
+</html>

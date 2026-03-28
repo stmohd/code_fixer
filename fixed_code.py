@@ -1,0 +1,1 @@
+Error: LLM not configured. Check .env and llm param.

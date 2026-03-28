@@ -1,0 +1,9 @@
+instance/&#10;agent_black/&#10;.DS_Store&#10;*.swp
+agent_black/
+env/
+venv
+.pyc
+.env
+
+
+
